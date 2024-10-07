@@ -1,5 +1,5 @@
 {
-  "name": "@malda/use-prev-state",
+  "name": "minh-custom-hooks",
   "version": "1.0.0",
   "description": "",
   "main": "./dist/cjs/index.js",
@@ -46,7 +46,6 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "ts-jest": "^29.2.5",
-    "tslib": "^2.7.0",
     "typescript": "^5.6.2"
   },
   "repository": {
