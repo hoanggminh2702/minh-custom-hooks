@@ -1,4 +1,4 @@
-import { DependencyList, useCallback, useMemo, useRef, useState } from 'react'
+import { DependencyList, Dispatch, useCallback, useMemo, useRef, useState } from 'react'
 import useDidUpdate from './useDidUpdate'
 
 export enum DebounceValueStatus {
@@ -8,9 +8,30 @@ export enum DebounceValueStatus {
 
 const defaultDebounceTime = 500
 
-export function useDebounceState<S>(initialState: S | (() => S), debounceTime = defaultDebounceTime) {
-  const [state, setState] = useState<S>(initialState)
-  const [debouncedState, setDebouncedState] = useState<S>(initialState)
+export interface UseDebounceStateFunc {
+  <S>(initialState: S | (() => S)): {
+    debouncedState: S
+    setState: Dispatch<React.SetStateAction<S>>
+    actualState: S
+    stop(): void
+    status: DebounceValueStatus
+  }
+
+  <S = undefined>(): {
+    debouncedState: S | undefined
+    setState: Dispatch<React.SetStateAction<S | undefined>>
+    actualState: S | undefined
+    stop(): void
+    status: DebounceValueStatus
+  }
+}
+
+export const useDebounceState: UseDebounceStateFunc = function <S>(
+  initialState?: S | (() => S),
+  debounceTime = defaultDebounceTime,
+) {
+  const [state, setState] = useState(initialState)
+  const [debouncedState, setDebouncedState] = useState(initialState)
   const timer = useRef<ReturnType<typeof setTimeout>>()
 
   const [status, setStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
@@ -32,7 +53,24 @@ export function useDebounceState<S>(initialState: S | (() => S), debounceTime = 
   return { debouncedState, setState, actualState: state, stop, status }
 }
 
-export function useDebounce<S>(state: S, debounceTime = defaultDebounceTime) {
+export interface UseDebounceFunc {
+  <S>(initialState: S | (() => S)): {
+    debouncedState: S
+    stop(): void
+    status: DebounceValueStatus
+  }
+
+  <S = undefined>(): {
+    debouncedState: S | undefined
+    stop(): void
+    status: DebounceValueStatus
+  }
+}
+
+export const useDebounce: UseDebounceFunc = function useDebounce<S = undefined>(
+  state?: S,
+  debounceTime = defaultDebounceTime,
+) {
   const [debouncedState, setDebouncedState] = useState(state)
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const [status, setStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
