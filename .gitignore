@@ -1,0 +1,8 @@
+# workspace vscode config
+/.vscode
+
+# dependencies
+/node_modules
+
+# production
+/dist
