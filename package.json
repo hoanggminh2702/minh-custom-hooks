@@ -1,6 +1,6 @@
 {
-  "name": "minh-custom-hooks",
-  "version": "1.0.0",
+  "name": "minh-custom-hooks-release",
+  "version": "1.0.2",
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -24,7 +24,7 @@
     "hooks",
     "react hooks"
   ],
-  "author": "hoanggminh270",
+  "author": "hoanggminh2702",
   "license": "ISC",
   "devDependencies": {
     "@testing-library/dom": "^10.4.0",
