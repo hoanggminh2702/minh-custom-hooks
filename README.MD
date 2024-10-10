@@ -224,26 +224,27 @@ const {
 
 <h3 id="use-debounce-fn">useDebounceFn</h3>
 
-**useDebounceFn** những trường hợp phải debounce 1 tác vụ phức tạp thay vì chỉ thực hiện debounce việc thay đổi state.
-Input:
+Trong những trường hợp phải debounce 1 tác vụ phức tạp thay vì chỉ thực hiện debounce việc thay đổi state.
 
-1. callback: callback cần được debounce, callback này có thể là 1 pure function, hoặc trả về 1 promise.
-2. config: thêm các tùy chọn config
-
-- debounceTime: tương tự [useDebounce debounceTime](#use-debounce-input),
-- Nếu callback là 1 promise:
-  i. onSuccees: callback khi Promise resolve.
-  ii. onError: callback khi Promise reject.
-
-3. deps: trong trường hợp muốn sử dụng useCallback cho callback.
-
-Output:
-
-1. returnedData: Data trả về của callback, nếu callback trả về 1 Promise, data này sẽ là kết quả của Promise sau khi thưc thi debounce và Promise resolve kết quả.
-2. status: tương tự [useDebounce status](#use-debounce-output).
-3. progressStatus: Toàn bộ trạng thái từ khi debounce đến khi Promise resolve hoặc reject. Các trạng thái tương tự [useDebounce status](#use-debounce-output).
-4. run: thực thi callback.
-5. stop: tương tự [useDebounce stop](#use-debounce-output)
+> Input:
+>
+> 1.  callback: callback cần được debounce, callback này có thể là 1 pure function, hoặc trả về 1 promise.
+> 2.  config: thêm các tùy chọn config
+>
+> - debounceTime: tương tự [useDebounce debounceTime](#use-debounce-input),
+> - Nếu callback là 1 promise:
+>   i. onSuccees: callback khi Promise resolve.
+>   ii. onError: callback khi Promise reject.
+>
+> 3.  deps: trong trường hợp muốn sử dụng useCallback cho callback.
+>
+> Output:
+>
+> 1.  returnedData: Data trả về của callback, nếu callback trả về 1 Promise, data này sẽ là kết quả của Promise sau khi thưc thi debounce và Promise resolve kết quả.
+> 2.  status: tương tự [useDebounce status](#use-debounce-output).
+> 3.  progressStatus: Toàn bộ trạng thái từ khi debounce đến khi Promise resolve hoặc reject. Các trạng thái tương tự [useDebounce status](#use-debounce-output).
+> 4.  run: thực thi callback.
+> 5.  stop: tương tự [useDebounce stop](#use-debounce-output)
 
 **_Ví dụ_**
 
@@ -284,7 +285,7 @@ Khi handleSearch là 1 tác vụ bất đồng bộ, useDebounce cung cấp nhi�
 
 ```tsx
 ...
-const handleSearch = (fullName, address) => {
+const handleSearch = async (fullName, address) => {
     return await searchAPI().then(res => setListData(res))
 }
 ```
