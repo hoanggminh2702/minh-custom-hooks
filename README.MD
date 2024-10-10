@@ -191,6 +191,15 @@ return (
 
 ```
 
+> **Lưu ý:** DebounceValueStatus là Enum được defined built-in khi thư viện được viết, bạn có thế import nó trong quá trình sử dụng như sau.
+
+```tsx
+import { DebounceValueStatus } from "minh-custom-hooks-release/dist/esm/hooks/useDebounce";
+
+...
+
+```
+
 <h3 id="use-debounce-state">useDebounceState</h3>
 Là hook được sử dụng như 1 useState, expose state thực tế và state đã được debounce, giảm độ dài code.
 
