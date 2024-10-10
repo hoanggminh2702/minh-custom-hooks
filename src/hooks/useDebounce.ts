@@ -1,4 +1,4 @@
-import { DependencyList, Dispatch, useCallback, useMemo, useRef, useState } from 'react'
+import { DependencyList, Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react'
 import useDidUpdate from './useDidUpdate'
 
 export enum DebounceValueStatus {
@@ -11,7 +11,7 @@ const defaultDebounceTime = 500
 export interface UseDebounceStateFunc {
   <S>(initialState: S | (() => S)): {
     debouncedState: S
-    setState: Dispatch<React.SetStateAction<S>>
+    setState: Dispatch<SetStateAction<S>>
     actualState: S
     stop(): void
     status: DebounceValueStatus
@@ -19,7 +19,7 @@ export interface UseDebounceStateFunc {
 
   <S = undefined>(): {
     debouncedState: S | undefined
-    setState: Dispatch<React.SetStateAction<S | undefined>>
+    setState: Dispatch<SetStateAction<S | undefined>>
     actualState: S | undefined
     stop(): void
     status: DebounceValueStatus

@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -17,9 +17,13 @@
   },
   "keywords": [
     "useState",
+    "useLifeCycle",
     "useDidUpdate",
     "useMount",
     "useDebounce",
+    "useToggle",
+    "useEventEffect",
+    "useEventDidUpdate",
     "React",
     "hooks",
     "react hooks"
