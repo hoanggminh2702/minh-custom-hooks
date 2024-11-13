@@ -6,9 +6,11 @@
 2. **[useDebounce group](#use-debounce-group)**
 3. **[useMount](#use-mount)**
 4. **[useDidUpdate](#use-did-update)**
-5. **[useEventEffect](#use-event-effect)**
-6. **[useEventDidUpdate](#use-event-did-update)**
-7. **[useEventMemo](#use-event-memo)**
+5. ~~**[useEventEffect](#use-event-effect)**~~
+6. ~~**[useEventDidUpdate](#use-event-did-update)**~~
+7. ~~**[useEventMemo](#use-event-memo)**~~
+
+> ⚠️ **Cảnh báo:** Các hook Event bị loại bỏ do React đã support chúng native
 
 ---
 
