@@ -27,7 +27,7 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
   onSuccess,
   onError,
   onFinally,
-  preserve = false,
+  preserve = true,
   preserveWhenError = false,
 }: UseTaskProps<TTask, TError>) {
   const { state, on, off } = useToggle()
