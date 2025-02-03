@@ -1,6 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
-import useToggle from './useToggle'
 
 export enum EnumTaskState {
   IDLE = 'IDLE',
@@ -10,11 +9,12 @@ export enum EnumTaskState {
   CANCELED = 'CANCELED',
 }
 
-type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
+export type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
 
-type UseTaskProps<TTask extends () => Promise<any>, TError extends any = any> = {
+type UseTaskProps<TTask extends (...args: any[]) => Promise<any>, TError extends any = any> = {
   task: TTask
-
+  startLoadingOnBeforeStart?: boolean
+  onBeforeStart?: () => Promise<boolean>
   onSuccess?(
     data: UnwrapPromise<ReturnType<TTask>> | undefined,
     others: {
@@ -30,34 +30,106 @@ type UseTaskProps<TTask extends () => Promise<any>, TError extends any = any> = 
   onFinally?(others?: { params: [...Parameters<TTask>] }): void
   preserve?: boolean
   preserveWhenError?: boolean
+  loadingAtInit?: boolean
 }
 
 export default function useTask<TTask extends (...args: any[]) => Promise<any>, TError extends any>({
   task,
+  startLoadingOnBeforeStart,
+  onBeforeStart,
   onSuccess,
   onError,
   onFinally,
   preserve = true,
   preserveWhenError = false,
+  loadingAtInit,
 }: UseTaskProps<TTask, TError>) {
-  const { state, on, off } = useToggle()
-
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
-  const [taskState, setTaskState] = useState<EnumTaskState>(EnumTaskState.IDLE)
+  const [taskState, setTaskState] = useState<EnumTaskState>(loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE)
 
   // STORE NEWEST TASK ID TO MAKE SURE TASK DATA AND TASK STATE IS NEWEST
   const newestTask = useRef<string>()
 
   const runTask = (...args: Parameters<typeof task>) => {
+    const taskAsync = async (...args: Parameters<typeof task>) => {
+      const taskId = uuid.v4()
+      newestTask.current = taskId
+
+      !preserve && setTaskData(undefined)
+
+      let continueRunningTask = true
+
+      if (onBeforeStart) {
+        startLoadingOnBeforeStart && setTaskState(EnumTaskState.PENDING)
+        try {
+          continueRunningTask = await onBeforeStart()
+          if (!continueRunningTask) setTaskState(EnumTaskState.IDLE)
+        } catch (err) {
+          continueRunningTask = false
+          setTaskState(EnumTaskState.FAIL)
+        }
+      }
+
+      if (continueRunningTask) {
+        setTaskState(EnumTaskState.PENDING)
+        try {
+          const result = await task(...args)
+
+          if (newestTask.current === taskId) {
+            onSuccess &&
+              onSuccess(result, {
+                params: args,
+              })
+            setTaskData(result)
+            setTaskState(EnumTaskState.SUCCESS)
+          }
+        } catch (err: any) {
+          if (newestTask.current === taskId) {
+            onError &&
+              onError(err, {
+                params: args,
+              })
+            !preserveWhenError && setTaskData(undefined)
+            setTaskState(EnumTaskState.FAIL)
+            setTaskError(err)
+          }
+        } finally {
+          if (newestTask.current === taskId) {
+            // If newest task !== taskId, new task has been created, and it will surely reach finally and off loading would be trigger
+            // else if it is canceled, the task state and loading state is immediately set when cancel function is triggered
+            onFinally && onFinally({ params: args })
+          }
+        }
+      }
+    }
+
+    taskAsync(...args)
+  }
+
+  const runTaskAsync = async (...args: Parameters<typeof task>) => {
     const taskId = uuid.v4()
     newestTask.current = taskId
-    on()
-    setTaskState(EnumTaskState.PENDING)
+
     !preserve && setTaskData(undefined)
 
-    task(...args)
-      .then((res) => {
+    let continueRunningTask = true
+
+    if (onBeforeStart) {
+      startLoadingOnBeforeStart && setTaskState(EnumTaskState.PENDING)
+      try {
+        continueRunningTask = await onBeforeStart()
+        if (!continueRunningTask) setTaskState(EnumTaskState.IDLE)
+      } catch (err) {
+        continueRunningTask = false
+        setTaskState(EnumTaskState.FAIL)
+      }
+    }
+
+    if (continueRunningTask) {
+      setTaskState(EnumTaskState.PENDING)
+      try {
+        const res = await task(...args)
         if (newestTask.current === taskId) {
           onSuccess &&
             onSuccess(res, {
@@ -66,8 +138,8 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
           setTaskData(res)
           setTaskState(EnumTaskState.SUCCESS)
         }
-      })
-      .catch((err) => {
+        return res as Awaited<UnwrapPromise<ReturnType<typeof task>>>
+      } catch (err: any) {
         if (newestTask.current === taskId) {
           onError &&
             onError(err, {
@@ -77,59 +149,22 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
           setTaskState(EnumTaskState.FAIL)
           setTaskError(err)
         }
-      })
-      .finally(() => {
+
+        throw err
+      } finally {
         if (newestTask.current === taskId) {
           // If newest task !== taskId, new task has been created, and it will surely reach finally and off loading would be trigger
           // else if it is canceled, the task state and loading state is immediately set when cancel function is triggered
-          off()
           onFinally && onFinally({ params: args })
         }
-      })
-  }
-
-  const runTaskAsync = async (...args: Parameters<typeof task>) => {
-    const taskId = uuid.v4()
-    newestTask.current = taskId
-    on()
-    setTaskState(EnumTaskState.PENDING)
-    !preserve && setTaskData(undefined)
-    try {
-      const res = await task(...args)
-      if (newestTask.current === taskId) {
-        onSuccess &&
-          onSuccess(res, {
-            params: args,
-          })
-        setTaskData(res)
-        setTaskState(EnumTaskState.SUCCESS)
       }
-      return res as Awaited<UnwrapPromise<ReturnType<typeof task>>>
-    } catch (err: any) {
-      if (newestTask.current === taskId) {
-        onError &&
-          onError(err, {
-            params: args,
-          })
-        !preserveWhenError && setTaskData(undefined)
-        setTaskState(EnumTaskState.FAIL)
-        setTaskError(err)
-      }
-
-      throw err
-    } finally {
-      if (newestTask.current === taskId) {
-        // If newest task !== taskId, new task has been created, and it will surely reach finally and off loading would be trigger
-        // else if it is canceled, the task state and loading state is immediately set when cancel function is triggered
-        off()
-        onFinally && onFinally({ params: args })
-      }
+    } else {
+      return undefined
     }
   }
 
   const cancelTask = useCallback(() => {
     newestTask.current = undefined
-    off()
     setTaskState(EnumTaskState.CANCELED)
   }, [])
 
@@ -137,7 +172,10 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     data: taskData,
     error: taskError,
     state: taskState,
-    isLoading: state,
+    isIdle: taskState === EnumTaskState.IDLE,
+    isLoading: taskState === EnumTaskState.PENDING,
+    isSuccess: taskState === EnumTaskState.SUCCESS,
+    isError: taskState === EnumTaskState.FAIL,
     run: runTask,
     runAsync: runTaskAsync,
     cancel: cancelTask,

@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.23",
+  "version": "1.0.26-beta-1",
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -26,6 +26,8 @@
     "useDebounce",
     "useToggle",
     "useLocalStorage",
+    "useTask",
+    "useTaskEffect",
     "React",
     "hooks",
     "react hooks"
