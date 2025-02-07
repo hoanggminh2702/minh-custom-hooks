@@ -11,7 +11,9 @@ export enum EnumTaskState {
 
 export type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
 
-type UseTaskProps<TTask extends (...args: any[]) => Promise<any>, TError extends any = any> = {
+export type TTaskType = (...args: any[]) => Promise<any>
+
+export type UseTaskProps<TTask extends TTaskType, TError extends any = any> = {
   task: TTask
   startLoadingOnBeforeStart?: boolean
   onBeforeStart?: () => Promise<boolean>
@@ -35,7 +37,7 @@ type UseTaskProps<TTask extends (...args: any[]) => Promise<any>, TError extends
 
 export default function useTask<TTask extends (...args: any[]) => Promise<any>, TError extends any>({
   task,
-  startLoadingOnBeforeStart,
+  startLoadingOnBeforeStart = true,
   onBeforeStart,
   onSuccess,
   onError,

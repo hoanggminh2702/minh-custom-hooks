@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.26-beta-1",
+  "version": "1.0.26-beta-9",
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

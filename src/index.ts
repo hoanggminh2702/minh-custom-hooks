@@ -7,6 +7,7 @@ import useMount from './hooks/useMount'
 import useTask from './hooks/useTask'
 import useTaskEffect from './hooks/useTaskEffect'
 import useToggle from './hooks/useToggle'
+import actionCreators from './redux/actionCreators'
 
 export {
   useDebounce,
@@ -21,3 +22,5 @@ export {
   useTaskEffect,
   useToggle,
 }
+
+export { actionCreators }
