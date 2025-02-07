@@ -33,6 +33,7 @@ export type UseTaskProps<TTask extends TTaskType, TError extends any = any> = {
   preserve?: boolean
   preserveWhenError?: boolean
   loadingAtInit?: boolean
+  debounceTime?: number
 }
 
 export default function useTask<TTask extends (...args: any[]) => Promise<any>, TError extends any>({
@@ -45,10 +46,14 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
   preserve = true,
   preserveWhenError = false,
   loadingAtInit,
+  debounceTime,
 }: UseTaskProps<TTask, TError>) {
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
   const [taskState, setTaskState] = useState<EnumTaskState>(loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE)
+
+  const timeoutId = useRef<ReturnType<typeof setTimeout>>()
+  const rejectRef = useRef<(reason: any) => void>()
 
   // STORE NEWEST TASK ID TO MAKE SURE TASK DATA AND TASK STATE IS NEWEST
   const newestTask = useRef<string>()
@@ -76,9 +81,8 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
       if (continueRunningTask) {
         setTaskState(EnumTaskState.PENDING)
         try {
-          const result = await task(...args)
-
           if (newestTask.current === taskId) {
+            const result = await task(...args)
             onSuccess &&
               onSuccess(result, {
                 params: args,
@@ -87,15 +91,13 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
             setTaskState(EnumTaskState.SUCCESS)
           }
         } catch (err: any) {
-          if (newestTask.current === taskId) {
-            onError &&
-              onError(err, {
-                params: args,
-              })
-            !preserveWhenError && setTaskData(undefined)
-            setTaskState(EnumTaskState.FAIL)
-            setTaskError(err)
-          }
+          onError &&
+            onError(err, {
+              params: args,
+            })
+          !preserveWhenError && setTaskData(undefined)
+          setTaskState(EnumTaskState.FAIL)
+          setTaskError(err)
         } finally {
           if (newestTask.current === taskId) {
             // If newest task !== taskId, new task has been created, and it will surely reach finally and off loading would be trigger
@@ -107,6 +109,15 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     }
 
     taskAsync(...args)
+  }
+
+  const runTaskDebounce = (...args: Parameters<typeof task>) => {
+    clearTimeout(timeoutId.current)
+    setTaskState(EnumTaskState.PENDING)
+
+    timeoutId.current = setTimeout(() => {
+      runTask(...args)
+    }, debounceTime)
   }
 
   const runTaskAsync = async (...args: Parameters<typeof task>) => {
@@ -131,26 +142,25 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     if (continueRunningTask) {
       setTaskState(EnumTaskState.PENDING)
       try {
-        const res = await task(...args)
         if (newestTask.current === taskId) {
+          const res = await task(...args)
           onSuccess &&
             onSuccess(res, {
               params: args,
             })
           setTaskData(res)
           setTaskState(EnumTaskState.SUCCESS)
+          return res as Awaited<UnwrapPromise<ReturnType<typeof task>>>
         }
-        return res as Awaited<UnwrapPromise<ReturnType<typeof task>>>
+        return undefined
       } catch (err: any) {
-        if (newestTask.current === taskId) {
-          onError &&
-            onError(err, {
-              params: args,
-            })
-          !preserveWhenError && setTaskData(undefined)
-          setTaskState(EnumTaskState.FAIL)
-          setTaskError(err)
-        }
+        onError &&
+          onError(err, {
+            params: args,
+          })
+        !preserveWhenError && setTaskData(undefined)
+        setTaskState(EnumTaskState.FAIL)
+        setTaskError(err)
 
         throw err
       } finally {
@@ -165,9 +175,30 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     }
   }
 
+  const runTaskDebounceAsync = async (...args: Parameters<typeof task>) => {
+    rejectRef.current?.(false)
+    clearTimeout(timeoutId.current)
+
+    try {
+      setTaskState(EnumTaskState.PENDING)
+      await new Promise((resolve, reject) => {
+        rejectRef.current = reject
+        setTimeout(() => {
+          resolve(true)
+        }, debounceTime)
+      })
+
+      return runTaskAsync(...args)
+    } catch {
+      return undefined
+    }
+  }
+
   const cancelTask = useCallback(() => {
     newestTask.current = undefined
     setTaskState(EnumTaskState.CANCELED)
+    clearTimeout(timeoutId.current)
+    rejectRef.current?.(false)
   }, [])
 
   return {
@@ -178,8 +209,10 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     isLoading: taskState === EnumTaskState.PENDING,
     isSuccess: taskState === EnumTaskState.SUCCESS,
     isError: taskState === EnumTaskState.FAIL,
-    run: runTask,
-    runAsync: runTaskAsync,
+    // run: runTask,
+    // runAsync: runTaskAsync,
+    run: debounceTime && debounceTime > 0 ? runTaskDebounce : runTask,
+    runAsync: debounceTime && debounceTime > 0 ? runTaskDebounceAsync : runTaskAsync,
     cancel: cancelTask,
   }
 }
