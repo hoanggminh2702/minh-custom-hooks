@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
 
 export enum EnumTaskState {
@@ -34,6 +34,7 @@ export type UseTaskProps<TTask extends TTaskType, TError extends any = any> = {
   preserveWhenError?: boolean
   loadingAtInit?: boolean
   debounceTime?: number
+  resetOnUnmount?: boolean
 }
 
 export default function useTask<TTask extends (...args: any[]) => Promise<any>, TError extends any>({
@@ -47,10 +48,13 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
   preserveWhenError = false,
   loadingAtInit,
   debounceTime,
+  resetOnUnmount = true,
 }: UseTaskProps<TTask, TError>) {
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
-  const [taskState, setTaskState] = useState<EnumTaskState>(loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE)
+  const [taskState, setTaskState] = useState<keyof typeof EnumTaskState>(
+    loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE,
+  )
 
   const timeoutId = useRef<ReturnType<typeof setTimeout>>()
   const rejectRef = useRef<(reason: any) => void>()
@@ -65,7 +69,7 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
 
       !preserve && setTaskData(undefined)
 
-      let continueRunningTask = true
+      let continueRunningTask: boolean = true
 
       if (onBeforeStart) {
         startLoadingOnBeforeStart && setTaskState(EnumTaskState.PENDING)
@@ -201,6 +205,19 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     rejectRef.current?.(false)
   }, [])
 
+  const reset = useCallback(() => {
+    cancelTask()
+
+    setTaskData(undefined)
+    setTaskState(EnumTaskState.IDLE)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      resetOnUnmount && reset()
+    }
+  }, [resetOnUnmount])
+
   return {
     data: taskData,
     error: taskError,
@@ -214,5 +231,6 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
     run: debounceTime && debounceTime > 0 ? runTaskDebounce : runTask,
     runAsync: debounceTime && debounceTime > 0 ? runTaskDebounceAsync : runTaskAsync,
     cancel: cancelTask,
+    reset,
   }
 }

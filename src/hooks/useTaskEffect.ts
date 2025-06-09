@@ -2,7 +2,7 @@ import { DependencyList, useCallback, useEffect, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
 import { EnumTaskState, UnwrapPromise } from './useTask'
 
-export type UseTaskEffectProps<TTask extends () => Promise<any>, TError extends any = any> = {
+export type UseTaskEffectProps<TTask extends (...args: []) => Promise<any>, TError extends any = any> = {
   task: TTask
   deps: DependencyList | string | number
   enabled?: boolean
@@ -15,9 +15,10 @@ export type UseTaskEffectProps<TTask extends () => Promise<any>, TError extends 
   preserve?: boolean
   preserveWhenError?: boolean
   debounceTime?: number
+  resetOnUnmount?: boolean
 }
 
-export default function useTask<TTask extends () => Promise<any>, TError extends any>({
+export default function useTask<TTask extends (...args: []) => Promise<any>, TError extends any>({
   task,
   onBeforeStart,
   onSuccess,
@@ -30,10 +31,13 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
   loadingAtInit,
   startLoadingOnBeforeStart = true,
   debounceTime,
+  resetOnUnmount = true,
 }: UseTaskEffectProps<TTask, TError>) {
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
-  const [taskState, setTaskState] = useState<EnumTaskState>(loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE)
+  const [taskState, setTaskState] = useState<keyof typeof EnumTaskState>(
+    loadingAtInit ? EnumTaskState.PENDING : EnumTaskState.IDLE,
+  )
 
   // For debounce time
   const timeoutId = useRef<ReturnType<typeof setTimeout>>()
@@ -42,7 +46,7 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
   // STORE NEWEST TASK ID TO MAKE SURE TASK DATA AND TASK STATE IS NEWEST
   const newestTask = useRef<string>()
 
-  const runTask = () => {
+  const runTask = (..._: []) => {
     const taskAsync = async () => {
       const taskId = uuid.v4()
       newestTask.current = taskId
@@ -88,7 +92,7 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
     taskAsync()
   }
 
-  const runTaskDebounce = () => {
+  const runTaskDebounce = (..._: []) => {
     clearTimeout(timeoutId.current)
     setTaskState(EnumTaskState.PENDING)
 
@@ -97,7 +101,7 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
     }, debounceTime)
   }
 
-  const runTaskAsync = async () => {
+  const runTaskAsync = async (..._: []) => {
     const taskId = uuid.v4()
     newestTask.current = taskId
 
@@ -146,7 +150,7 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
     }
   }
 
-  const runTaskDebounceAsync = async () => {
+  const runTaskDebounceAsync = async (..._: []) => {
     rejectRef.current?.(false)
     clearTimeout(timeoutId.current)
 
@@ -171,11 +175,24 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
     clearTimeout(timeoutId.current)
   }, [])
 
+  const reset = useCallback(() => {
+    cancelTask()
+
+    setTaskData(undefined)
+    setTaskState(EnumTaskState.IDLE)
+  }, [])
+
   useEffect(() => {
     if (enabled) {
       debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
     }
   }, [...(Array.isArray(deps) ? deps : [deps]), enabled, debounceTime])
+
+  useEffect(() => {
+    return () => {
+      resetOnUnmount && reset()
+    }
+  }, [resetOnUnmount])
 
   return {
     data: taskData,
@@ -188,5 +205,6 @@ export default function useTask<TTask extends () => Promise<any>, TError extends
     refetch: debounceTime && debounceTime > 0 ? runTaskDebounce : runTask,
     refetchAsync: debounceTime && debounceTime > 0 ? runTaskDebounceAsync : runTaskAsync,
     cancel: cancelTask,
+    reset,
   }
 }

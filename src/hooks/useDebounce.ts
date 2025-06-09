@@ -14,7 +14,7 @@ export interface UseDebounceStateFunc {
     setState: Dispatch<SetStateAction<S>>
     actualState: S
     stop(): void
-    status: DebounceValueStatus
+    status: keyof typeof DebounceValueStatus
   }
 
   <S = undefined>(): {
@@ -22,7 +22,7 @@ export interface UseDebounceStateFunc {
     setState: Dispatch<SetStateAction<S | undefined>>
     actualState: S | undefined
     stop(): void
-    status: DebounceValueStatus
+    status: keyof typeof DebounceValueStatus
   }
 }
 
@@ -34,7 +34,7 @@ export const useDebounceState: UseDebounceStateFunc = function <S>(
   const [debouncedState, setDebouncedState] = useState(initialState)
   const timer = useRef<ReturnType<typeof setTimeout>>()
 
-  const [status, setStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
+  const [status, setStatus] = useState<keyof typeof DebounceValueStatus>(DebounceValueStatus.DONE)
 
   const stop = useCallback(() => {
     timer.current && clearTimeout(timer.current)
@@ -57,13 +57,13 @@ export interface UseDebounceFunc {
   <S>(initialState: S | (() => S)): {
     debouncedState: S
     stop(): void
-    status: DebounceValueStatus
+    status: keyof typeof DebounceValueStatus
   }
 
   <S = undefined>(): {
     debouncedState: S | undefined
     stop(): void
-    status: DebounceValueStatus
+    status: keyof typeof DebounceValueStatus
   }
 }
 
@@ -73,7 +73,7 @@ export const useDebounce: UseDebounceFunc = function useDebounce<S = undefined>(
 ) {
   const [debouncedState, setDebouncedState] = useState(state)
   const timer = useRef<ReturnType<typeof setTimeout>>()
-  const [status, setStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
+  const [status, setStatus] = useState<keyof typeof DebounceValueStatus>(DebounceValueStatus.DONE)
 
   const stop = useCallback(() => {
     timer.current && clearTimeout(timer.current)
@@ -131,8 +131,8 @@ export function useDebounceFn<TParams extends unknown[] = any[], TReturn = unkno
   // const isDevelopment = useRef<boolean>(!process.env.NODE_ENV || process.env.NODE_ENV === 'development');
   const timer = useRef<ReturnType<typeof setTimeout>>()
   const [returnedData, setReturnedData] = useState<TypeFromPromise<TReturn>>()
-  const [status, setStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
-  const [progressStatus, setProgressStatus] = useState<DebounceValueStatus>(DebounceValueStatus.DONE)
+  const [status, setStatus] = useState<keyof typeof DebounceValueStatus>(DebounceValueStatus.DONE)
+  const [progressStatus, setProgressStatus] = useState<keyof typeof DebounceValueStatus>(DebounceValueStatus.DONE)
 
   const { debounceTime, ...others } = useMemo(() => {
     return {

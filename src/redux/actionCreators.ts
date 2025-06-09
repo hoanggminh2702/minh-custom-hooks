@@ -49,3 +49,9 @@ export default function actionCreators<
     },
   }
 }
+
+// const a = actionCreators("test", {test: 3}, {
+//   setAuth(state) {
+//     return state
+//   }
+// })

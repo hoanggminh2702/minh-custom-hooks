@@ -1,10 +1,10 @@
 import { useCallback, useLayoutEffect, useState } from 'react'
 
 export default function useLocalStorage(key: string) {
-  if (!global?.window?.localStorage) throw new Error('Must be used on client!')
+  // if (!global?.window?.localStorage) throw new Error('Must be used on client!')
 
   const [data, setData] = useState(() => {
-    const getDataFromStorage = global.window.localStorage.getItem(key)
+    const getDataFromStorage = window?.global?.localStorage ? global.window.localStorage.getItem(key) : null
     return getDataFromStorage
   })
 
