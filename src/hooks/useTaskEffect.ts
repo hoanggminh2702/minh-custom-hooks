@@ -18,7 +18,7 @@ export type UseTaskEffectProps<TTask extends (...args: []) => Promise<any>, TErr
   resetOnUnmount?: boolean
 }
 
-export default function useTask<TTask extends (...args: []) => Promise<any>, TError extends any>({
+export default function useTaskEffect<TTask extends (...args: []) => Promise<any>, TError extends any>({
   task,
   onBeforeStart,
   onSuccess,
