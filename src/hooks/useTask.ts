@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
 
-export enum EnumTaskState {
+export const enum EnumTaskState {
   IDLE = 'IDLE',
   PENDING = 'PENDING',
   SUCCESS = 'SUCCESS',

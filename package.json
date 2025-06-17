@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.29",
+  "version": "1.0.31",
   "description": "",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -70,6 +70,7 @@
   ],
   "dependencies": {
     "react-native-uuid": "^2.0.3",
+    "rxjs": "^7.8.2",
     "uuid": "^11.0.3"
   }
 }

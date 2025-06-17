@@ -1,26 +1,45 @@
-import { useDebounce, useDebounceFn, useDebounceState } from './hooks/useDebounce'
+import { EnumSubscriptionState, type UseTaskObservable } from './hooks/@types/useTaskObservable'
+import {
+  DebounceValueStatus,
+  useDebounce,
+  useDebounceFn,
+  UseDebounceFunc,
+  useDebounceState,
+  UseDebounceStateFunc,
+} from './hooks/useDebounce'
 import useDidUpdate from './hooks/useDidUpdate'
 import useLayoutDidUpdate from './hooks/useLayoutDidUpdate'
 import useLayoutMount from './hooks/useLayoutMount'
 import useLocalStorage from './hooks/useLocalStorage'
 import useMount from './hooks/useMount'
-import useTask from './hooks/useTask'
-import useTaskEffect from './hooks/useTaskEffect'
+import useTask, { EnumTaskState, type UseTaskProps } from './hooks/useTask'
+import useTaskEffect, { type UseTaskEffectProps } from './hooks/useTaskEffect'
+import useTaskEffectObservable, { type UseTaskEffectObservable } from './hooks/useTaskEffectObservable'
+import useTaskObservable from './hooks/useTaskObservable'
 import useToggle from './hooks/useToggle'
 import actionCreators from './redux/actionCreators'
 
 export {
+  DebounceValueStatus,
   useDebounce,
   useDebounceFn,
   useDebounceState,
-  useDidUpdate,
-  useLayoutDidUpdate,
-  useLayoutMount,
-  useLocalStorage,
-  useMount,
-  useTask,
-  useTaskEffect,
-  useToggle,
+  type UseDebounceFunc,
+  type UseDebounceStateFunc,
+}
+
+export { useDidUpdate, useLayoutDidUpdate, useLayoutMount, useMount }
+
+export { useLocalStorage, useToggle }
+
+export { EnumTaskState, useTask, useTaskEffect, type UseTaskEffectProps, type UseTaskProps }
+
+export {
+  EnumSubscriptionState,
+  useTaskEffectObservable,
+  useTaskObservable,
+  type UseTaskEffectObservable,
+  type UseTaskObservable,
 }
 
 export { actionCreators }

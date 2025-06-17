@@ -1,7 +1,7 @@
 import { DependencyList, Dispatch, SetStateAction, useCallback, useMemo, useRef, useState } from 'react'
 import useDidUpdate from './useDidUpdate'
 
-export enum DebounceValueStatus {
+export const enum DebounceValueStatus {
   DONE = 'DONE',
   PENDING = 'PENDING',
 }
