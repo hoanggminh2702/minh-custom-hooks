@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useRef, useState, type DependencyList } from 'react'
-import { defer, Observable, Subscription } from 'rxjs'
+import { defer, Observable, Subject, Subscription } from 'rxjs'
 import { fromPromise } from 'rxjs/internal/observable/innerFrom'
 import { EnumSubscriptionState, type ExtractGeneric, type UseTaskObservable } from './@types/useTaskObservable'
 
@@ -15,7 +15,9 @@ export type UseTaskEffectObservable<
 
 export default function useTaskEffectObservable<
   TFunc extends (...args: []) => Promise<any> | Observable<any>,
-  TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']>,
+  TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']> = Observable<
+    ExtractGeneric<ReturnType<TFunc>>
+  >,
 >({
   task,
   observablePreHandler,
@@ -27,6 +29,7 @@ export default function useTaskEffectObservable<
   enabled = true,
   loadingAtInit,
 }: UseTaskEffectObservable<TFunc, TPreHandlerResult>) {
+  const [currentSource$, setCurrentSource$] = useState<Subject<ExtractGeneric<TPreHandlerResult>> | null>(null)
   const currentSubscription = useRef<Subscription | null>(null)
   const [data, setData] = useState<ExtractGeneric<TPreHandlerResult>>()
   const [err, setErr] = useState<any>()
@@ -39,38 +42,12 @@ export default function useTaskEffectObservable<
   )
 
   const run = () => {
+    currentSource$?.unsubscribe()
     currentSubscription.current?.unsubscribe()
-    setTaskState(EnumSubscriptionState.LOADING)
-    setSubscriptionState(EnumSubscriptionState.LOADING)
 
-    if (task instanceof Promise) {
-      let toObservable = defer(() => {
-        return fromPromise(task)
-      })
+    const sub$ = new Subject<ExtractGeneric<TPreHandlerResult>>()
 
-      if (typeof observablePreHandler === 'function') {
-        toObservable = observablePreHandler(toObservable)
-      }
-
-      currentSubscription.current = toObservable.subscribe({
-        next: (v) => {
-          setData(v)
-          setSubscriptionState(EnumSubscriptionState.DATARECEIVED)
-          onNext?.(v)
-        },
-        error: (err) => {
-          setTaskState(EnumSubscriptionState.FAILED)
-          setSubscriptionState(EnumSubscriptionState.FAILED)
-          setErr(err)
-          onError?.(err)
-        },
-        complete() {
-          setTaskState(EnumSubscriptionState.SUCCESS)
-          setSubscriptionState(EnumSubscriptionState.SUCCESS)
-          onComplete?.()
-        },
-      })
-    } else {
+    if (typeof task === 'function') {
       let source$ = defer(() => {
         const generateObservable$ = task()
 
@@ -81,7 +58,12 @@ export default function useTaskEffectObservable<
         source$ = observablePreHandler(source$)
       }
 
-      currentSubscription.current = source$.subscribe({
+      setTaskState(EnumSubscriptionState.LOADING)
+      setSubscriptionState(EnumSubscriptionState.LOADING)
+
+      currentSubscription.current = source$.subscribe(sub$)
+
+      sub$.subscribe({
         next: (v) => {
           setData(v)
           setSubscriptionState(EnumSubscriptionState.DATARECEIVED)
@@ -99,15 +81,29 @@ export default function useTaskEffectObservable<
           onComplete?.()
         },
       })
+
+      setCurrentSource$(sub$)
+    } else {
+      throw new Error('Task must be a function observable or promise')
     }
   }
 
   const cancel = useCallback(() => {
     currentSubscription.current?.unsubscribe()
+    currentSource$?.unsubscribe()
+
     setTaskState(EnumSubscriptionState.CANCELED)
     setSubscriptionState(EnumSubscriptionState.CANCELED)
     onCancel?.(data)
   }, [data, onCancel])
+
+  const createObservable = useCallback(() => {
+    return currentSource$?.asObservable()
+  }, [currentSource$])
+
+  const complete = useCallback(() => {
+    currentSource$?.complete()
+  }, [currentSource$])
 
   useEffect(() => {
     if (enabled) {
@@ -116,6 +112,7 @@ export default function useTaskEffectObservable<
 
     return () => {
       currentSubscription.current?.unsubscribe()
+      currentSource$?.unsubscribe()
     }
   }, [...(deps ?? []), enabled])
 
@@ -136,16 +133,18 @@ export default function useTaskEffectObservable<
     isCanceled: taskState === EnumSubscriptionState.CANCELED,
 
     // subscription state
-    isSubscriptionIdle: taskState === EnumSubscriptionState.IDLE,
-    isSubscriptionLoading: taskState === EnumSubscriptionState.LOADING,
-    isSubscriptionDataReceived: taskState === EnumSubscriptionState.DATARECEIVED,
-    isSubscriptionSuccess: taskState === EnumSubscriptionState.SUCCESS,
-    isSubscriptionFailed: taskState === EnumSubscriptionState.FAILED,
-    isSubscriptionCanceled: taskState === EnumSubscriptionState.CANCELED,
+    isSubscriptionIdle: subscriptionState === EnumSubscriptionState.IDLE,
+    isSubscriptionLoading: subscriptionState === EnumSubscriptionState.LOADING,
+    isSubscriptionDataReceived: subscriptionState === EnumSubscriptionState.DATARECEIVED,
+    isSubscriptionSuccess: subscriptionState === EnumSubscriptionState.SUCCESS,
+    isSubscriptionFailed: subscriptionState === EnumSubscriptionState.FAILED,
+    isSubscriptionCanceled: subscriptionState === EnumSubscriptionState.CANCELED,
 
     // action
     refetch: run,
+    complete,
     cancel,
     subscription: currentSubscription.current,
+    createObservable,
   }
 }

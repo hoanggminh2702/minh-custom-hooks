@@ -7,7 +7,9 @@ export type ExtractGeneric<T extends Observable<any> | Promise<any>> = T extends
 
 export type UseTaskObservable<
   TFunc extends (...args: any[]) => Promise<any> | Observable<any>,
-  TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']>,
+  TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']> = Observable<
+    ExtractGeneric<ReturnType<TFunc>>
+  >,
 > = {
   task: TFunc
   resetDataWhenError?: boolean
