@@ -1,3 +1,4 @@
+import AxiosObservable from './core/AxiosObservable'
 import { EnumSubscriptionState, type UseTaskObservable } from './hooks/@types/useTaskObservable'
 import {
   DebounceValueStatus,
@@ -41,5 +42,7 @@ export {
   type UseTaskEffectObservable,
   type UseTaskObservable,
 }
+
+export { AxiosObservable }
 
 export { actionCreators }
