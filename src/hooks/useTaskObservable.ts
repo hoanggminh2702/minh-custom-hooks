@@ -18,7 +18,7 @@ export default function useTaskObservable<
   const [taskState, setTaskState] = useState<EnumSubscriptionState>(EnumSubscriptionState.IDLE)
   const [subscriptionState, setSubscriptionState] = useState<EnumSubscriptionState>(EnumSubscriptionState.IDLE)
 
-  const run = () => {
+  const run = (...args: Parameters<TFunc>) => {
     currentSource$?.unsubscribe()
     currentSubscription.current?.unsubscribe()
 
@@ -26,7 +26,7 @@ export default function useTaskObservable<
 
     if (typeof task === 'function') {
       let source$ = defer(() => {
-        const generateObservable$ = task()
+        const generateObservable$ = task(...args)
 
         return generateObservable$ instanceof Promise ? fromPromise(generateObservable$) : generateObservable$
       })
@@ -110,7 +110,7 @@ export default function useTaskObservable<
     isSubscriptionCanceled: subscriptionState === EnumSubscriptionState.CANCELED,
 
     // action
-    refetch: run,
+    run,
     cancel,
     subscription: currentSubscription.current,
     createObservable,
