@@ -1,10 +1,13 @@
-import { DependencyList, EffectCallback, useLayoutEffect, useState } from 'react'
+import { DependencyList, EffectCallback, useLayoutEffect, useRef } from 'react'
 
 export default function useLayoutDidUpdate(fn: EffectCallback, deps: DependencyList) {
-  const [mountedFlag, setMountedFlag] = useState<boolean>(false)
+  const mountedRef = useRef(false)
 
   useLayoutEffect(() => {
-    if (!mountedFlag) return setMountedFlag(true)
+    if (!mountedRef.current) {
+      mountedRef.current = true
+      return
+    }
     return fn()
   }, deps)
 }

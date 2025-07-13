@@ -4,16 +4,23 @@ import { defer, Observable, Subject, Subscription } from 'rxjs'
 import { fromPromise } from 'rxjs/internal/observable/innerFrom'
 import { EnumSubscriptionState, type ExtractGeneric, type UseTaskObservable } from './@types/useTaskObservable'
 
+export const DEFAULT_DATA_VALUE = undefined
+export const DEFAULT_ERROR_VALUE = undefined
+export const DEFAULT_SOURCE$_VALUE = null
+export const DEFAULT_SUBSCRIPTION_VALUE = null
+
 export default function useTaskObservable<
-  TFunc extends (...args: any[]) => Promise<any> | Observable<any>,
+  TFunc extends (...args: [...(any | [])]) => Promise<any> | Observable<any>,
   TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']> = Observable<
     ExtractGeneric<ReturnType<TFunc>>
   >,
 >({ task, observablePreHandler, onNext, onComplete, onError, onCancel }: UseTaskObservable<TFunc, TPreHandlerResult>) {
-  const [currentSource$, setCurrentSource$] = useState<Subject<ExtractGeneric<TPreHandlerResult>> | null>(null)
-  const currentSubscription = useRef<Subscription | null>(null)
-  const [data, setData] = useState<ExtractGeneric<TPreHandlerResult>>()
-  const [err, setErr] = useState<any>()
+  const [currentSource$, setCurrentSource$] = useState<Subject<ExtractGeneric<TPreHandlerResult>> | null>(
+    DEFAULT_SOURCE$_VALUE,
+  )
+  const currentSubscription = useRef<Subscription | null>(DEFAULT_SUBSCRIPTION_VALUE)
+  const [data, setData] = useState<ExtractGeneric<TPreHandlerResult> | undefined>(DEFAULT_DATA_VALUE)
+  const [err, setErr] = useState<any | undefined>(DEFAULT_ERROR_VALUE)
 
   const [taskState, setTaskState] = useState<EnumSubscriptionState>(EnumSubscriptionState.IDLE)
   const [subscriptionState, setSubscriptionState] = useState<EnumSubscriptionState>(EnumSubscriptionState.IDLE)
@@ -44,18 +51,18 @@ export default function useTaskObservable<
         next: (v) => {
           setData(v)
           setSubscriptionState(EnumSubscriptionState.DATARECEIVED)
-          onNext?.(v)
+          onNext?.(v, ...args)
         },
         error: (err) => {
           setErr(err)
           setTaskState(EnumSubscriptionState.FAILED)
           setSubscriptionState(EnumSubscriptionState.FAILED)
-          onError?.(err)
+          onError?.(err, ...args)
         },
         complete() {
           setTaskState(EnumSubscriptionState.SUCCESS)
           setSubscriptionState(EnumSubscriptionState.SUCCESS)
-          onComplete?.()
+          onComplete?.(...args)
         },
       })
 
@@ -78,10 +85,22 @@ export default function useTaskObservable<
     return currentSource$?.asObservable()
   }, [currentSource$])
 
+  const reset = useCallback(function () {
+    setData(DEFAULT_DATA_VALUE)
+    setErr(DEFAULT_ERROR_VALUE)
+    setSubscriptionState(EnumSubscriptionState.IDLE)
+    setTaskState(EnumSubscriptionState.IDLE)
+
+    currentSource$?.unsubscribe()
+    setCurrentSource$(DEFAULT_SOURCE$_VALUE)
+
+    currentSubscription.current?.unsubscribe()
+    currentSubscription.current = DEFAULT_SUBSCRIPTION_VALUE
+  }, [])
+
   useEffect(() => {
     return () => {
-      currentSubscription.current?.unsubscribe()
-      currentSource$?.unsubscribe()
+      reset()
     }
   }, [])
 

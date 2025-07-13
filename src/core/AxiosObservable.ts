@@ -43,8 +43,8 @@ export default class AxiosObservable {
   }
 
   addResponseInterceptor(key: string, ...handler: Parameters<AxiosInterceptorManager<AxiosResponse>['use']>) {
-    this.removeRequestInterceptor(key)
-    this.requestInterceptors.set(key, this.axiosInstance.interceptors.response.use(...handler))
+    this.removeResponseInterceptor(key)
+    this.responseInterceptors.set(key, this.axiosInstance.interceptors.response.use(...handler))
   }
 
   removeResponseInterceptor(key: string) {
@@ -80,13 +80,13 @@ export default class AxiosObservable {
 
   head<T = any, D = any>(url: string, config?: AxiosRequestConfig<D>) {
     return defer(() =>
-      fromPromise(this.axiosInstance.delete<T, AxiosResponse<T>, D>(url, config)).pipe(map((r) => r.data)),
+      fromPromise(this.axiosInstance.head<T, AxiosResponse<T>, D>(url, config)).pipe(map((r) => r.data)),
     )
   }
 
   options<T = any, D = any>(url: string, config?: AxiosRequestConfig<D>) {
     return defer(() =>
-      fromPromise(this.axiosInstance.delete<T, AxiosResponse<T>, D>(url, config)).pipe(map((r) => r.data)),
+      fromPromise(this.axiosInstance.options<T, AxiosResponse<T>, D>(url, config)).pipe(map((r) => r.data)),
     )
   }
 

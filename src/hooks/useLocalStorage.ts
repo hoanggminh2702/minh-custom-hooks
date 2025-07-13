@@ -1,11 +1,9 @@
 import { useCallback, useLayoutEffect, useState } from 'react'
 
 export default function useLocalStorage(key: string) {
-  // if (!global?.window?.localStorage) throw new Error('Must be used on client!')
-
   const [data, setData] = useState(() => {
-    const getDataFromStorage = window?.global?.localStorage ? global.window.localStorage.getItem(key) : null
-    return getDataFromStorage
+    if (typeof window === 'undefined') return null
+    return window.localStorage.getItem(key)
   })
 
   const handleSetData = useCallback(
@@ -21,9 +19,14 @@ export default function useLocalStorage(key: string) {
     global.window.localStorage.removeItem(key)
   }, [key])
 
-  const handleLocalStorageChange = useCallback((ev: StorageEvent) => {
-    ev.newValue !== ev.oldValue && setData((prev) => (prev !== ev.newValue ? ev.newValue : prev))
-  }, [])
+  const handleLocalStorageChange = useCallback(
+    (ev: StorageEvent) => {
+      if (ev.key === key && ev.newValue !== ev.oldValue) {
+        setData(ev.newValue)
+      }
+    },
+    [key],
+  )
 
   useLayoutEffect(() => {
     window.addEventListener('storage', handleLocalStorageChange)

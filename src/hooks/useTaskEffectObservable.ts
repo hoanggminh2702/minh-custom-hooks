@@ -3,9 +3,15 @@ import { useCallback, useEffect, useRef, useState, type DependencyList } from 'r
 import { defer, Observable, Subject, Subscription } from 'rxjs'
 import { fromPromise } from 'rxjs/internal/observable/innerFrom'
 import { EnumSubscriptionState, type ExtractGeneric, type UseTaskObservable } from './@types/useTaskObservable'
+import {
+  DEFAULT_DATA_VALUE,
+  DEFAULT_ERROR_VALUE,
+  DEFAULT_SOURCE$_VALUE,
+  DEFAULT_SUBSCRIPTION_VALUE,
+} from './useTaskObservable'
 
 export type UseTaskEffectObservable<
-  TFunc extends (...args: any[]) => Promise<any> | Observable<any>,
+  TFunc extends () => Promise<any> | Observable<any>,
   TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']>,
 > = UseTaskObservable<TFunc, TPreHandlerResult> & {
   deps?: DependencyList
@@ -14,7 +20,7 @@ export type UseTaskEffectObservable<
 }
 
 export default function useTaskEffectObservable<
-  TFunc extends (...args: []) => Promise<any> | Observable<any>,
+  TFunc extends () => Promise<any> | Observable<any>,
   TPreHandlerResult extends ReturnType<Observable<ExtractGeneric<ReturnType<TFunc>>>['pipe']> = Observable<
     ExtractGeneric<ReturnType<TFunc>>
   >,
@@ -67,18 +73,18 @@ export default function useTaskEffectObservable<
         next: (v) => {
           setData(v)
           setSubscriptionState(EnumSubscriptionState.DATARECEIVED)
-          onNext?.(v)
+          ;(onNext as any)?.(v)
         },
         error: (err) => {
           setErr(err)
           setTaskState(EnumSubscriptionState.FAILED)
           setSubscriptionState(EnumSubscriptionState.FAILED)
-          onError?.(err)
+          ;(onError as any)?.(err)
         },
         complete() {
           setTaskState(EnumSubscriptionState.SUCCESS)
           setSubscriptionState(EnumSubscriptionState.SUCCESS)
-          onComplete?.()
+          ;(onComplete as any)?.()
         },
       })
 
@@ -105,14 +111,26 @@ export default function useTaskEffectObservable<
     currentSource$?.complete()
   }, [currentSource$])
 
+  const reset = useCallback(function () {
+    setData(DEFAULT_DATA_VALUE)
+    setErr(DEFAULT_ERROR_VALUE)
+    setSubscriptionState(EnumSubscriptionState.IDLE)
+    setTaskState(EnumSubscriptionState.IDLE)
+
+    currentSource$?.unsubscribe()
+    setCurrentSource$(DEFAULT_SOURCE$_VALUE)
+
+    currentSubscription.current?.unsubscribe()
+    currentSubscription.current = DEFAULT_SUBSCRIPTION_VALUE
+  }, [])
+
   useEffect(() => {
     if (enabled) {
       run()
     }
 
     return () => {
-      currentSubscription.current?.unsubscribe()
-      currentSource$?.unsubscribe()
+      reset()
     }
   }, [...(deps ?? []), enabled])
 
