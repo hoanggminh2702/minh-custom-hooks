@@ -88,6 +88,9 @@ export default function fetchActionsCreators<
         status: EnumTaskState.IDLE,
       }
     },
+    resetData() {
+      return initData
+    },
     ...actions,
   })
 }

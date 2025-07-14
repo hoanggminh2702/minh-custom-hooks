@@ -19,7 +19,7 @@ import useTaskEffectObservable, { type UseTaskEffectObservable } from './hooks/u
 import useTaskObservable from './hooks/useTaskObservable'
 import useToggle from './hooks/useToggle'
 import actionCreators from './redux/actionCreators'
-import fetchActionCreators from './redux/fetchActionCreators'
+import fetchActionCreators, { createInitGlobalFetchValue, type GlobalFetchValueType } from './redux/fetchActionCreators'
 
 export {
   DebounceValueStatus,
@@ -46,4 +46,4 @@ export {
 
 export { AxiosObservable }
 
-export { actionCreators, fetchActionCreators }
+export { actionCreators, createInitGlobalFetchValue, fetchActionCreators, type GlobalFetchValueType }
