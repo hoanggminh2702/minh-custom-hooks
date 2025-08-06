@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.38",
+  "version": "1.0.41-beta.3",
   "description": "My custom hooks for working easier while developing react web app",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",

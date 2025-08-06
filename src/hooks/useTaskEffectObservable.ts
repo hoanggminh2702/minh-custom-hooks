@@ -132,7 +132,7 @@ export default function useTaskEffectObservable<
     return () => {
       reset()
     }
-  }, [...(deps ?? []), enabled])
+  }, [deps])
 
   return {
     // data state

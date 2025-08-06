@@ -1,4 +1,4 @@
-import { DependencyList, useCallback, useEffect, useRef, useState } from 'react'
+import { DependencyList, startTransition, useCallback, useEffect, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
 import { EnumTaskState, UnwrapPromise } from './useTask'
 
@@ -9,6 +9,7 @@ export type UseTaskEffectProps<TTask extends (...args: []) => Promise<any>, TErr
   loadingAtInit?: boolean
   startLoadingOnBeforeStart?: boolean
   onBeforeStart?: () => Promise<boolean>
+  onInit?: (refetch: () => any, cancel: () => void, reset: () => void) => void
   onSuccess?(data: UnwrapPromise<ReturnType<TTask>> | undefined): void
   onError?(error: TError | undefined): void
   onFinally?(): void
@@ -21,6 +22,7 @@ export type UseTaskEffectProps<TTask extends (...args: []) => Promise<any>, TErr
 export default function useTaskEffect<TTask extends (...args: []) => Promise<any>, TError extends any>({
   task,
   onBeforeStart,
+  onInit,
   onSuccess,
   onError,
   onFinally,
@@ -33,6 +35,7 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
   debounceTime,
   resetOnUnmount = true,
 }: UseTaskEffectProps<TTask, TError>) {
+  const isInitRef = useRef(false)
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
   const [taskState, setTaskState] = useState<keyof typeof EnumTaskState>(
@@ -183,10 +186,21 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
   }, [])
 
   useEffect(() => {
-    if (enabled) {
-      debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
+    if (!isInitRef.current) {
+      onInit?.(debounceTime ? runTaskDebounce : runTask, cancelTask, reset)
+      isInitRef.current = true
+
+      startTransition(() => {
+        if (enabled) {
+          debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
+        }
+      })
+    } else {
+      if (enabled) {
+        debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
+      }
     }
-  }, [...(Array.isArray(deps) ? deps : [deps]), enabled, debounceTime])
+  }, [...(Array.isArray(deps) ? deps : [deps]), debounceTime])
 
   useEffect(() => {
     return () => {
@@ -202,8 +216,9 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
     isLoading: taskState === EnumTaskState.PENDING,
     isSuccess: taskState === EnumTaskState.SUCCESS,
     isError: taskState === EnumTaskState.FAIL,
-    refetch: debounceTime && debounceTime > 0 ? runTaskDebounce : runTask,
-    refetchAsync: debounceTime && debounceTime > 0 ? runTaskDebounceAsync : runTaskAsync,
+    isEnabled: enabled,
+    refetch: enabled ? (debounceTime && debounceTime > 0 ? runTaskDebounce : runTask) : () => {},
+    refetchAsync: enabled ? (debounceTime && debounceTime > 0 ? runTaskDebounceAsync : runTaskAsync) : () => {},
     cancel: cancelTask,
     reset,
   }

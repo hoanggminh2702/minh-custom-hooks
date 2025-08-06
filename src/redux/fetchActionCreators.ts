@@ -32,7 +32,7 @@ export function createInitGlobalFetchValue<TValue = any, TRunTask extends (...ar
     isSuccess: false,
     isError: false,
     isIdle: true,
-    status: 'idle',
+    status: EnumTaskState.IDLE,
   }
 }
 

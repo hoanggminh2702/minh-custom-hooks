@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import uuid from 'react-native-uuid'
 
-export const enum EnumTaskState {
+export enum EnumTaskState {
   IDLE = 'IDLE',
   PENDING = 'PENDING',
   SUCCESS = 'SUCCESS',
@@ -17,6 +17,7 @@ export type UseTaskProps<TTask extends TTaskType, TError extends any = any> = {
   task: TTask
   startLoadingOnBeforeStart?: boolean
   onBeforeStart?: () => Promise<boolean>
+  onInit?: (run: (...args: any[]) => any, cancel: () => void, reset: () => void) => void
   onSuccess?(
     data: UnwrapPromise<ReturnType<TTask>> | undefined,
     others: {
@@ -41,6 +42,7 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
   task,
   startLoadingOnBeforeStart = true,
   onBeforeStart,
+  onInit,
   onSuccess,
   onError,
   onFinally,
@@ -50,6 +52,8 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
   debounceTime,
   resetOnUnmount = true,
 }: UseTaskProps<TTask, TError>) {
+  const isInitRef = useRef(false)
+
   const [taskData, setTaskData] = useState<UnwrapPromise<ReturnType<TTask>>>()
   const [taskError, setTaskError] = useState<TError>()
   const [taskState, setTaskState] = useState<keyof typeof EnumTaskState>(
@@ -217,6 +221,14 @@ export default function useTask<TTask extends (...args: any[]) => Promise<any>, 
       resetOnUnmount && reset()
     }
   }, [resetOnUnmount])
+
+  // Xử lý khi init
+  useEffect(() => {
+    if (!isInitRef.current) {
+      onInit?.(debounceTime ? runTaskDebounce : runTask, cancelTask, reset)
+      isInitRef.current = true
+    }
+  }, [])
 
   return {
     data: taskData,
