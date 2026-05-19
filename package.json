@@ -1,6 +1,6 @@
 {
   "name": "minh-custom-hooks-release",
-  "version": "1.0.41-beta.3",
+  "version": "1.0.41-beta.6",
   "description": "My custom hooks for working easier while developing react web app",
   "main": "./dist/cjs/index.js",
   "module": "./dist/esm/index.js",
@@ -72,7 +72,7 @@
     "README.md"
   ],
   "dependencies": {
-    "axios": "^1.10.0",
+    "axios": "^1.16.1",
     "react-native-uuid": "^2.0.3",
     "rxjs": "^7.8.2",
     "uuid": "^11.0.3"

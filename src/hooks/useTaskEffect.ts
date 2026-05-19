@@ -54,7 +54,6 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
       const taskId = uuid.v4()
       newestTask.current = taskId
 
-      setTaskState(EnumTaskState.PENDING)
       !preserve && setTaskData(undefined)
 
       let continueRunningTask = true
@@ -176,6 +175,7 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
     newestTask.current = undefined
     setTaskState(EnumTaskState.CANCELED)
     clearTimeout(timeoutId.current)
+    rejectRef.current?.(false)
   }, [])
 
   const reset = useCallback(() => {
@@ -189,17 +189,13 @@ export default function useTaskEffect<TTask extends (...args: []) => Promise<any
     if (!isInitRef.current) {
       onInit?.(debounceTime ? runTaskDebounce : runTask, cancelTask, reset)
       isInitRef.current = true
+    }
 
-      startTransition(() => {
-        if (enabled) {
-          debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
-        }
-      })
-    } else {
+    startTransition(() => {
       if (enabled) {
         debounceTime && debounceTime > 0 ? runTaskDebounce() : runTask()
       }
-    }
+    })
   }, [...(Array.isArray(deps) ? deps : [deps]), debounceTime])
 
   useEffect(() => {
